@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Server source (distributed as pre-built bundle only)
+server/src/
+
+# Client build output
+/client/dist
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database (created at runtime)
+db/
+
+# Internal dev files
+implementation_plan.md
+task.md
