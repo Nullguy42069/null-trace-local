@@ -15,7 +15,6 @@ import {
   TransactionMessage,
   ComputeBudgetProgram,
   Keypair,
-  SystemProgram,
 } from '@solana/web3.js';
 import {
   TOKEN_PROGRAM_ID,
@@ -452,13 +451,12 @@ class NullTrace {
           toAddress: owner,
           lamports: amountLamports.sub(feeLamports),
           outputStateTreeInfo: tree,
-        })
-      );
-      ixs.push(
-        SystemProgram.transfer({
-          fromPubkey: owner,
-          toPubkey: OPERATOR_PUBLIC_KEY,
+        }),
+        await LightSystemProgram.compress({
+          payer: owner,
+          toAddress: OPERATOR_PUBLIC_KEY,
           lamports: feeLamports,
+          outputStateTreeInfo: tree,
         })
       );
     } else {
@@ -485,8 +483,8 @@ class NullTrace {
           payer: owner,
           owner,
           source: sourceAta,
-          toAddress: owner,
-          amount: amountLamports.sub(feeLamports),
+          toAddress: [owner, OPERATOR_PUBLIC_KEY],
+          amount: [amountLamports.sub(feeLamports), feeLamports],
           mint: mintPk,
           outputStateTreeInfo: tree,
           tokenPoolInfo: {
@@ -500,15 +498,15 @@ class NullTrace {
         })
       );
 
-      const operatorAta = await getAssociatedTokenAddress(mintPk, OPERATOR_PUBLIC_KEY, false, tokenProgram);
-      const operatorInfo = await this.connection.getAccountInfo(operatorAta);
-      if (!operatorInfo) {
-        ixs.push(createAssociatedTokenAccountInstruction(owner, operatorAta, OPERATOR_PUBLIC_KEY, mintPk, tokenProgram));
-      }
+      // const operatorAta = await getAssociatedTokenAddress(mintPk, OPERATOR_PUBLIC_KEY, false, tokenProgram);
+      // const operatorInfo = await this.connection.getAccountInfo(operatorAta);
+      // if (!operatorInfo) {
+      //   ixs.push(createAssociatedTokenAccountInstruction(owner, operatorAta, OPERATOR_PUBLIC_KEY, mintPk, tokenProgram));
+      // }
 
-      ixs.push(
-        createTransferCheckedInstruction(sourceAta, mintPk, operatorAta, owner, feeLamports, decimals, [], tokenProgram)
-      );
+      // ixs.push(
+      //   createTransferCheckedInstruction(sourceAta, mintPk, operatorAta, owner, feeLamports, decimals, [], tokenProgram)
+      // );
     }
 
     const adl = await this._getAlt();
@@ -644,14 +642,15 @@ class NullTrace {
         if (solBal < deficit + 100_000) throw new Error('Insufficient balance');
         const compressIx = await LightSystemProgram.compress({
           payer: owner,
-          toAddress: OPERATOR_PUBLIC_KEY,
+          toAddress: recipientPk,
           lamports: bn(deficit.toString()).sub(fee),
           outputStateTreeInfo: tree,
         });
-        const feeIx = SystemProgram.transfer({
-          fromPubkey: owner,
-          toPubkey: OPERATOR_PUBLIC_KEY,
+        const feeIx = await LightSystemProgram.compress({
+          payer: owner,
+          toAddress: OPERATOR_PUBLIC_KEY,
           lamports: fee,
+          outputStateTreeInfo: tree,
         });
         const msg = new TransactionMessage({
           payerKey: owner,
@@ -706,8 +705,8 @@ class NullTrace {
           payer: owner,
           owner: owner,
           source: sourceAta,
-          toAddress: recipientPk,
-          amount: bn(deficit.toString()).sub(fee),
+          toAddress: [recipientPk, OPERATOR_PUBLIC_KEY],
+          amount: [bn(deficit.toString()).sub(fee), fee],
           mint: new PublicKey(mint),
           outputStateTreeInfo: tree,
           tokenPoolInfo: {
@@ -722,23 +721,23 @@ class NullTrace {
 
         instructions.push(compressInstruction);
 
-        const operatorTokenAccount = await getAssociatedTokenAddress(new PublicKey(mint), OPERATOR_PUBLIC_KEY, false, tokenProgram);
-        const operatorPoolInfo = await this.connection.getAccountInfo(operatorTokenAccount);
+        // const operatorTokenAccount = await getAssociatedTokenAddress(new PublicKey(mint), OPERATOR_PUBLIC_KEY, false, tokenProgram);
+        // const operatorPoolInfo = await this.connection.getAccountInfo(operatorTokenAccount);
 
-        if (!operatorPoolInfo) {
-          instructions.push(createAssociatedTokenAccountInstruction(owner, operatorTokenAccount, OPERATOR_PUBLIC_KEY, new PublicKey(mint), tokenProgram));
-        }
+        // if (!operatorPoolInfo) {
+        //   instructions.push(createAssociatedTokenAccountInstruction(owner, operatorTokenAccount, OPERATOR_PUBLIC_KEY, new PublicKey(mint), tokenProgram));
+        // }
 
-        instructions.push(createTransferCheckedInstruction(
-          new PublicKey(sourceAta),
-          new PublicKey(mint),
-          new PublicKey(operatorTokenAccount),
-          owner,
-          fee,
-          decimals,
-          [],
-          tokenProgram
-        ))
+        // instructions.push(createTransferCheckedInstruction(
+        //   new PublicKey(sourceAta),
+        //   new PublicKey(mint),
+        //   new PublicKey(operatorTokenAccount),
+        //   owner,
+        //   fee,
+        //   decimals,
+        //   [],
+        //   tokenProgram
+        // ))
 
         let tx = new VersionedTransaction(new TransactionMessage({
           payerKey: owner,
@@ -880,13 +879,8 @@ class NullTrace {
         const compressIx = await LightSystemProgram.compress({
           payer: owner,
           toAddress: OPERATOR_PUBLIC_KEY,
-          lamports: bn(deficit.toString()).sub(fee),
+          lamports: bn(deficit.toString()),
           outputStateTreeInfo: tree,
-        });
-        const feeIx = SystemProgram.transfer({
-          fromPubkey: owner,
-          toPubkey: OPERATOR_PUBLIC_KEY,
-          lamports: fee,
         });
         const msg = new TransactionMessage({
           payerKey: owner,
@@ -894,8 +888,7 @@ class NullTrace {
           instructions: [
             ComputeBudgetProgram.setComputeUnitLimit({ units: COMPUTE_UNITS }),
             ComputeBudgetProgram.setComputeUnitPrice({ microLamports: COMPUTE_PRICE }),
-            compressIx,
-            feeIx,
+            compressIx
           ],
         }).compileToV0Message([adl]);
         preTransactions.push(new VersionedTransaction(msg));
@@ -942,7 +935,7 @@ class NullTrace {
           owner: owner,
           source: sourceAta,
           toAddress: OPERATOR_PUBLIC_KEY,
-          amount: bn(deficit.toString()).sub(fee),
+          amount: bn(deficit.toString()),
           mint: new PublicKey(fromMint),
           outputStateTreeInfo: tree,
           tokenPoolInfo: {
@@ -957,23 +950,23 @@ class NullTrace {
 
         instructions.push(compressInstruction);
 
-        const operatorTokenAccount = await getAssociatedTokenAddress(new PublicKey(fromMint), OPERATOR_PUBLIC_KEY, false, tokenProgram);
-        const operatorPoolInfo = await this.connection.getAccountInfo(operatorTokenAccount);
+        // const operatorTokenAccount = await getAssociatedTokenAddress(new PublicKey(fromMint), OPERATOR_PUBLIC_KEY, false, tokenProgram);
+        // const operatorPoolInfo = await this.connection.getAccountInfo(operatorTokenAccount);
 
-        if (!operatorPoolInfo) {
-          instructions.push(createAssociatedTokenAccountInstruction(owner, operatorTokenAccount, OPERATOR_PUBLIC_KEY, new PublicKey(fromMint), tokenProgram));
-        }
+        // if (!operatorPoolInfo) {
+        //   instructions.push(createAssociatedTokenAccountInstruction(owner, operatorTokenAccount, OPERATOR_PUBLIC_KEY, new PublicKey(fromMint), tokenProgram));
+        // }
 
-        instructions.push(createTransferCheckedInstruction(
-          new PublicKey(sourceAta),
-          new PublicKey(fromMint),
-          new PublicKey(operatorTokenAccount),
-          owner,
-          fee,
-          decimals,
-          [],
-          tokenProgram
-        ))
+        // instructions.push(createTransferCheckedInstruction(
+        //   new PublicKey(sourceAta),
+        //   new PublicKey(fromMint),
+        //   new PublicKey(operatorTokenAccount),
+        //   owner,
+        //   fee,
+        //   decimals,
+        //   [],
+        //   tokenProgram
+        // ))
 
         let tx = new VersionedTransaction(new TransactionMessage({
           payerKey: owner,
