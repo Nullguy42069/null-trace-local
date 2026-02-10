@@ -10,8 +10,9 @@ package-lock.json
 # Server source (distributed as pre-built bundle only)
 server/src/
 
-# Client build output
+# Build outputs
 /client/dist
+/sdk/dist
 
 # IDEs
 .vscode/

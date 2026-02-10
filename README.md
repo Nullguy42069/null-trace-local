@@ -123,6 +123,11 @@ null-trace-local/
 │   │   └── server.js     # Pre-built server bundle
 │   ├── .env.example
 │   └── package.json
+├── sdk/                  # JavaScript SDK (npm package)
+│   ├── src/
+│   │   └── index.js      # SDK source
+│   ├── package.json
+│   └── README.md
 ├── start.bat             # Windows  - double-click to launch
 ├── start.command          # macOS    - double-click to launch
 ├── start.sh              # Linux    - run in terminal
@@ -159,11 +164,36 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 > **Note**: The server source code (`server/src/`) is not included in this repository. Contributions to the server should be discussed in an issue first.
 
+## SDK
+
+NullTrace ships a standalone JavaScript SDK for integrating privacy features into your own apps — no local server needed:
+
+```bash
+npm install nulltrace-sdk @solana/web3.js @solana/spl-token @lightprotocol/stateless.js @lightprotocol/compressed-token
+```
+
+```js
+import { NullTrace } from 'nulltrace-sdk';
+
+const nt = new NullTrace('https://mainnet.helius-rpc.com/?api-key=YOUR_KEY', wallet);
+
+await nt.nullify('So11...', '0.5');
+await nt.reveal('So11...', '0.5');
+await nt.transfer('So11...', '1.0', 'Recipient...');
+await nt.swap('So11...', 'Es9v...', '1.0');
+const balances = await nt.getBalances();
+```
+
+> Requires a [Helius](https://helius.dev) RPC endpoint (ZK compression depends on Helius's photon indexer).
+
+Full documentation: [**sdk/README.md**](sdk/README.md)
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Links
 
+- [NullTrace](https://nulltrace.app) -- Official website
 - [Light Protocol](https://www.lightprotocol.com/) -- ZK compression for Solana
 - [Solana Wallet Adapter](https://github.com/solana-labs/wallet-adapter) -- Wallet integration

@@ -1,0 +1,57 @@
+{
+  "name": "nulltrace-sdk",
+  "version": "1.0.1",
+  "description": "NullTrace SDK - Privacy-focused Solana transactions powered by ZK compression",
+  "author": "NullTrace",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node build.js",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "@solana/web3.js": "^1.90.0",
+    "@solana/spl-token": "^0.4.0",
+    "@lightprotocol/stateless.js": "^0.22.0",
+    "@lightprotocol/compressed-token": "^0.22.0"
+  },
+  "dependencies": {
+    "bs58": "^6.0.0",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.12",
+    "@solana/web3.js": "^1.98.4",
+    "@solana/spl-token": "^0.4.14",
+    "@lightprotocol/stateless.js": "^0.22.0",
+    "@lightprotocol/compressed-token": "^0.22.0"
+  },
+  "keywords": [
+    "solana",
+    "privacy",
+    "zk",
+    "compression",
+    "light-protocol",
+    "nulltrace",
+    "swap",
+    "transfer"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NullTraceBot/null-trace-local/tree/main/sdk",
+    "directory": "sdk"
+  },
+  "homepage": "https://nulltrace.app"
+}
