@@ -46749,7 +46749,7 @@ Message: ${transactionMessage}.
        * @internal
        */
       static checkProgramId(programId) {
-        if (!programId.equals(SystemProgram2.programId)) {
+        if (!programId.equals(SystemProgram.programId)) {
           throw new Error("invalid instruction; programId is not SystemProgram");
         }
       }
@@ -46816,7 +46816,7 @@ Message: ${transactionMessage}.
         layout: BufferLayout__namespace.struct([BufferLayout__namespace.u32("instruction")])
       }
     });
-    var SystemProgram2 = class _SystemProgram {
+    var SystemProgram = class _SystemProgram {
       /**
        * @internal
        */
@@ -47151,7 +47151,7 @@ Message: ${transactionMessage}.
         });
       }
     };
-    SystemProgram2.programId = new PublicKey2("11111111111111111111111111111111");
+    SystemProgram.programId = new PublicKey2("11111111111111111111111111111111");
     var CHUNK_SIZE = PACKET_DATA_SIZE - 300;
     var Loader = class _Loader {
       /**
@@ -47195,28 +47195,28 @@ Message: ${transactionMessage}.
             }
             if (programInfo.data.length !== data.length) {
               transaction = transaction || new Transaction();
-              transaction.add(SystemProgram2.allocate({
+              transaction.add(SystemProgram.allocate({
                 accountPubkey: program.publicKey,
                 space: data.length
               }));
             }
             if (!programInfo.owner.equals(programId)) {
               transaction = transaction || new Transaction();
-              transaction.add(SystemProgram2.assign({
+              transaction.add(SystemProgram.assign({
                 accountPubkey: program.publicKey,
                 programId
               }));
             }
             if (programInfo.lamports < balanceNeeded) {
               transaction = transaction || new Transaction();
-              transaction.add(SystemProgram2.transfer({
+              transaction.add(SystemProgram.transfer({
                 fromPubkey: payer.publicKey,
                 toPubkey: program.publicKey,
                 lamports: balanceNeeded - programInfo.lamports
               }));
             }
           } else {
-            transaction = new Transaction().add(SystemProgram2.createAccount({
+            transaction = new Transaction().add(SystemProgram.createAccount({
               fromPubkey: payer.publicKey,
               newAccountPubkey: program.publicKey,
               lamports: balanceNeeded > 0 ? balanceNeeded : 1,
@@ -51858,7 +51858,7 @@ Message: ${transactionMessage}.
           isSigner: true,
           isWritable: true
         }, {
-          pubkey: SystemProgram2.programId,
+          pubkey: SystemProgram.programId,
           isSigner: false,
           isWritable: false
         }];
@@ -51906,7 +51906,7 @@ Message: ${transactionMessage}.
             isSigner: true,
             isWritable: true
           }, {
-            pubkey: SystemProgram2.programId,
+            pubkey: SystemProgram.programId,
             isSigner: false,
             isWritable: false
           });
@@ -52636,7 +52636,7 @@ Message: ${transactionMessage}.
        */
       static createAccountWithSeed(params) {
         const transaction = new Transaction();
-        transaction.add(SystemProgram2.createAccountWithSeed({
+        transaction.add(SystemProgram.createAccountWithSeed({
           fromPubkey: params.fromPubkey,
           newAccountPubkey: params.stakePubkey,
           basePubkey: params.basePubkey,
@@ -52661,7 +52661,7 @@ Message: ${transactionMessage}.
        */
       static createAccount(params) {
         const transaction = new Transaction();
-        transaction.add(SystemProgram2.createAccount({
+        transaction.add(SystemProgram.createAccount({
           fromPubkey: params.fromPubkey,
           newAccountPubkey: params.stakePubkey,
           lamports: params.lamports,
@@ -52849,7 +52849,7 @@ Message: ${transactionMessage}.
        */
       static split(params, rentExemptReserve) {
         const transaction = new Transaction();
-        transaction.add(SystemProgram2.createAccount({
+        transaction.add(SystemProgram.createAccount({
           fromPubkey: params.authorizedPubkey,
           newAccountPubkey: params.splitStakePubkey,
           lamports: rentExemptReserve,
@@ -52872,7 +52872,7 @@ Message: ${transactionMessage}.
           lamports
         } = params;
         const transaction = new Transaction();
-        transaction.add(SystemProgram2.allocate({
+        transaction.add(SystemProgram.allocate({
           accountPubkey: splitStakePubkey,
           basePubkey,
           seed,
@@ -52880,7 +52880,7 @@ Message: ${transactionMessage}.
           programId: this.programId
         }));
         if (rentExemptReserve && rentExemptReserve > 0) {
-          transaction.add(SystemProgram2.transfer({
+          transaction.add(SystemProgram.transfer({
             fromPubkey: params.authorizedPubkey,
             toPubkey: splitStakePubkey,
             lamports: rentExemptReserve
@@ -53225,7 +53225,7 @@ Message: ${transactionMessage}.
        */
       static createAccount(params) {
         const transaction = new Transaction();
-        transaction.add(SystemProgram2.createAccount({
+        transaction.add(SystemProgram.createAccount({
           fromPubkey: params.fromPubkey,
           newAccountPubkey: params.votePubkey,
           lamports: params.lamports,
@@ -53656,7 +53656,7 @@ Message: ${transactionMessage}.
     exports2.StakeProgram = StakeProgram;
     exports2.Struct = Struct;
     exports2.SystemInstruction = SystemInstruction;
-    exports2.SystemProgram = SystemProgram2;
+    exports2.SystemProgram = SystemProgram;
     exports2.Transaction = Transaction;
     exports2.TransactionExpiredBlockheightExceededError = TransactionExpiredBlockheightExceededError;
     exports2.TransactionExpiredNonceInvalidError = TransactionExpiredNonceInvalidError;
@@ -61345,7 +61345,7 @@ var require_transferChecked = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.transferCheckedInstructionData = void 0;
-    exports2.createTransferCheckedInstruction = createTransferCheckedInstruction2;
+    exports2.createTransferCheckedInstruction = createTransferCheckedInstruction;
     exports2.decodeTransferCheckedInstruction = decodeTransferCheckedInstruction;
     exports2.decodeTransferCheckedInstructionUnchecked = decodeTransferCheckedInstructionUnchecked;
     var buffer_layout_1 = require_Layout();
@@ -61360,7 +61360,7 @@ var require_transferChecked = __commonJS({
       (0, buffer_layout_utils_1.u64)("amount"),
       (0, buffer_layout_1.u8)("decimals")
     ]);
-    function createTransferCheckedInstruction2(source, mint, destination, owner, amount, decimals, multiSigners = [], programId = constants_js_1.TOKEN_PROGRAM_ID) {
+    function createTransferCheckedInstruction(source, mint, destination, owner, amount, decimals, multiSigners = [], programId = constants_js_1.TOKEN_PROGRAM_ID) {
       const keys = (0, internal_js_1.addSigners)([
         { pubkey: source, isSigner: false, isWritable: true },
         { pubkey: mint, isSigner: false, isWritable: false },
@@ -81314,15 +81314,13 @@ var {
   PublicKey,
   TransactionMessage,
   ComputeBudgetProgram,
-  Keypair,
-  SystemProgram
+  Keypair
 } = require_index_cjs();
 var {
   TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
   getAssociatedTokenAddress,
   createAssociatedTokenAccountInstruction,
-  createTransferCheckedInstruction,
   NATIVE_MINT
 } = require_cjs4();
 var bodyParser = require_body_parser();
@@ -81402,17 +81400,18 @@ app.get("/tx/nullify", async (req, res) => {
     const activeStateTrees = await connection.getStateTreeInfos();
     const tree = selectStateTreeInfo(activeStateTrees);
     if (isSOL) {
-      ixs.push(await LightSystemProgram.compress({
-        payer: publicKey,
-        toAddress: publicKey,
-        lamports: amountLamports.sub(feeLamports),
-        outputStateTreeInfo: tree
-      }));
       ixs.push(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: OPERATOR_PUBLIC_KEY,
-          lamports: feeLamports
+        await LightSystemProgram.compress({
+          payer: publicKey,
+          toAddress: publicKey,
+          lamports: amountLamports.sub(feeLamports),
+          outputStateTreeInfo: tree
+        }),
+        await LightSystemProgram.compress({
+          payer: publicKey,
+          toAddress: OPERATOR_PUBLIC_KEY,
+          lamports: feeLamports,
+          outputStateTreeInfo: tree
         })
       );
     } else {
@@ -81433,8 +81432,8 @@ app.get("/tx/nullify", async (req, res) => {
         payer: publicKey,
         owner: publicKey,
         source: sourceTokenAccount,
-        toAddress: publicKey,
-        amount: amountLamports.sub(feeLamports),
+        toAddress: [publicKey, OPERATOR_PUBLIC_KEY],
+        amount: [amountLamports.sub(feeLamports), feeLamports],
         mint: new PublicKey(mint),
         outputStateTreeInfo: tree,
         tokenPoolInfo: {
@@ -81446,21 +81445,6 @@ app.get("/tx/nullify", async (req, res) => {
           mint: new PublicKey(mint)
         }
       }));
-      const operatorTokenAccount = await getAssociatedTokenAddress(new PublicKey(mint), OPERATOR_PUBLIC_KEY, false, tokenProgram);
-      const operatorPoolInfo = await connection.getAccountInfo(operatorTokenAccount);
-      if (!operatorPoolInfo) {
-        ixs.push(createAssociatedTokenAccountInstruction(publicKey, operatorTokenAccount, OPERATOR_PUBLIC_KEY, new PublicKey(mint), tokenProgram));
-      }
-      ixs.push(createTransferCheckedInstruction(
-        new PublicKey(sourceTokenAccount),
-        new PublicKey(mint),
-        new PublicKey(operatorTokenAccount),
-        publicKey,
-        feeLamports,
-        decimals,
-        [],
-        tokenProgram
-      ));
     }
     const { blockhash } = await connection.getLatestBlockhash();
     const adlResult = await connection.getAddressLookupTable(new PublicKey("9NYFyEqPkyXUhkerbGHXUXkvb4qpzeEdHuGpgbgpH1NJ"));
@@ -81687,13 +81671,8 @@ app.get("/tx/swap", async (req, res) => {
         let transferTx = await LightSystemProgram.compress({
           payer: publicKey,
           toAddress: OPERATOR_PUBLIC_KEY,
-          lamports: bn(transferPublic.toString()).sub(feeLamports),
+          lamports: transferPublic.toString(),
           outputStateTreeInfo: tree
-        });
-        let feeTx = SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: OPERATOR_PUBLIC_KEY,
-          lamports: feeLamports
         });
         let tx = new VersionedTransaction(new TransactionMessage({
           payerKey: publicKey,
@@ -81701,8 +81680,7 @@ app.get("/tx/swap", async (req, res) => {
           instructions: [
             ComputeBudgetProgram.setComputeUnitLimit({ units: 14e5 }),
             ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 5e3 }),
-            transferTx,
-            feeTx
+            transferTx
           ]
         }).compileToV0Message([adl]));
         allTransactions.push(tx);
@@ -81745,7 +81723,7 @@ app.get("/tx/swap", async (req, res) => {
           owner: publicKey,
           source: sourceTokenAccount,
           toAddress: OPERATOR_PUBLIC_KEY,
-          amount: bn(transferPublic.toString()).sub(feeLamports),
+          amount: bn(transferPublic.toString()),
           mint: new PublicKey(fromToken.mint),
           outputStateTreeInfo: tree,
           tokenPoolInfo: {
@@ -81758,21 +81736,6 @@ app.get("/tx/swap", async (req, res) => {
           }
         });
         instructions.push(compressInstruction);
-        const operatorTokenAccount = await getAssociatedTokenAddress(new PublicKey(fromMint), OPERATOR_PUBLIC_KEY, false, tokenProgram);
-        const operatorPoolInfo = await connection.getAccountInfo(operatorTokenAccount);
-        if (!operatorPoolInfo) {
-          instructions.push(createAssociatedTokenAccountInstruction(publicKey, operatorTokenAccount, OPERATOR_PUBLIC_KEY, new PublicKey(fromMint), tokenProgram));
-        }
-        instructions.push(createTransferCheckedInstruction(
-          new PublicKey(sourceTokenAccount),
-          new PublicKey(fromMint),
-          new PublicKey(operatorTokenAccount),
-          publicKey,
-          feeLamports,
-          decimals,
-          [],
-          tokenProgram
-        ));
         let tx = new VersionedTransaction(new TransactionMessage({
           payerKey: publicKey,
           recentBlockhash: blockhash,
@@ -82194,16 +82157,17 @@ app.get("/tx/transfer", async (req, res) => {
         const publicBalance = await connection.getBalance(publicKey);
         if (publicBalance < transferPublic + 1e5)
           return res.status(400).json({ error: "Insufficient balance" });
-        let transferTx = await LightSystemProgram.transfer({
+        let transferTx = await LightSystemProgram.compress({
           payer: publicKey,
           toAddress: recipientPublicKey,
           lamports: bn(transferPublic.toString()).sub(feeLamports),
           outputStateTreeInfo: tree
         });
-        let feeTx = SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: OPERATOR_PUBLIC_KEY,
-          lamports: feeLamports
+        let feeTx = await LightSystemProgram.compress({
+          payer: publicKey,
+          toAddress: OPERATOR_PUBLIC_KEY,
+          lamports: feeLamports,
+          outputStateTreeInfo: tree
         });
         let tx = new VersionedTransaction(new TransactionMessage({
           payerKey: publicKey,
@@ -82254,8 +82218,8 @@ app.get("/tx/transfer", async (req, res) => {
           payer: publicKey,
           owner: publicKey,
           source: sourceTokenAccount,
-          toAddress: recipientPublicKey,
-          amount: bn(transferPublic.toString()).sub(feeLamports),
+          toAddress: [recipientPublicKey, OPERATOR_PUBLIC_KEY],
+          amount: [bn(transferPublic.toString()).sub(feeLamports), feeLamports],
           mint: new PublicKey(mint),
           outputStateTreeInfo: tree,
           tokenPoolInfo: {
@@ -82268,21 +82232,6 @@ app.get("/tx/transfer", async (req, res) => {
           }
         });
         instructions.push(compressInstruction);
-        const operatorTokenAccount = await getAssociatedTokenAddress(new PublicKey(mint), OPERATOR_PUBLIC_KEY, false, tokenProgram);
-        const operatorPoolInfo = await connection.getAccountInfo(operatorTokenAccount);
-        if (!operatorPoolInfo) {
-          instructions.push(createAssociatedTokenAccountInstruction(publicKey, operatorTokenAccount, OPERATOR_PUBLIC_KEY, new PublicKey(mint), tokenProgram));
-        }
-        instructions.push(createTransferCheckedInstruction(
-          new PublicKey(sourceTokenAccount),
-          new PublicKey(mint),
-          new PublicKey(operatorTokenAccount),
-          publicKey,
-          feeLamports,
-          decimals,
-          [],
-          tokenProgram
-        ));
         let tx = new VersionedTransaction(new TransactionMessage({
           payerKey: publicKey,
           recentBlockhash: blockhash,
