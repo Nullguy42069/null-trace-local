@@ -11,6 +11,10 @@
     ".": {
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
+    },
+    "./limit-orders": {
+      "import": "./dist/limit-orders.mjs",
+      "require": "./dist/limit-orders.cjs"
     }
   },
   "files": [
