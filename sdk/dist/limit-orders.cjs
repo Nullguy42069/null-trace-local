@@ -130,6 +130,139 @@ var LimitOrders = class {
    * @returns {Object} Order details
    */
   async createLimitOrder(params) {
+    return this._createOrder(params);
+  }
+  /**
+   * Create a Take Profit order (sell when price goes UP)
+   * 
+   * @param {Object} params
+   * @param {string} params.token - Token mint address
+   * @param {string} params.amount - Amount to sell
+   * @param {string} params.triggerPrice - Price to sell at (higher than current)
+   * @param {number} [params.gainPercent] - Alternative: % gain from entry (e.g., 35 for +35%)
+   * @param {number} [params.expiry] - Unix timestamp when order expires
+   * @param {number} [params.slippage=0.1] - Max slippage
+   * @param {string} [params.label] - Human-readable label
+   * @returns {Object} Order details
+   * 
+   * @example
+   * // Sell 10000 tokens when price hits $0.00040 (+33% from $0.00030)
+   * await lo.createTakeProfit({
+   *   token: 'F7Ci...',
+   *   amount: '10000',
+   *   triggerPrice: '0.00040',
+   *   label: 'MEGA +33% TP'
+   * });
+   */
+  async createTakeProfit(params) {
+    const { token, amount, triggerPrice, gainPercent, entryPrice, ...rest } = params;
+    let finalTriggerPrice = triggerPrice;
+    if (gainPercent && entryPrice) {
+      finalTriggerPrice = (parseFloat(entryPrice) * (1 + gainPercent / 100)).toString();
+    }
+    return this._createOrder({
+      type: "SELL_TP",
+      token,
+      amount,
+      triggerPrice: finalTriggerPrice,
+      label: params.label || `TP ${gainPercent ? "+" + gainPercent + "%" : "@ $" + finalTriggerPrice}`,
+      ...rest
+    });
+  }
+  /**
+   * Create a Stop Loss order (sell when price goes DOWN)
+   * 
+   * @param {Object} params
+   * @param {string} params.token - Token mint address
+   * @param {string} params.amount - Amount to sell
+   * @param {string} params.triggerPrice - Price to sell at (lower than current)
+   * @param {number} [params.lossPercent] - Alternative: % loss from entry (e.g., 15 for -15%)
+   * @param {number} [params.expiry] - Unix timestamp when order expires
+   * @param {number} [params.slippage=0.15] - Max slippage (default 15% for SL)
+   * @param {string} [params.label] - Human-readable label
+   * @returns {Object} Order details
+   * 
+   * @example
+   * // Sell 10000 tokens when price drops to $0.00025 (-17% from $0.00030)
+   * await lo.createStopLoss({
+   *   token: 'F7Ci...',
+   *   amount: '10000',
+   *   triggerPrice: '0.00025',
+   *   label: 'MEGA -17% SL'
+   * });
+   */
+  async createStopLoss(params) {
+    const { token, amount, triggerPrice, lossPercent, entryPrice, ...rest } = params;
+    let finalTriggerPrice = triggerPrice;
+    if (lossPercent && entryPrice) {
+      finalTriggerPrice = (parseFloat(entryPrice) * (1 - lossPercent / 100)).toString();
+    }
+    return this._createOrder({
+      type: "SELL_SL",
+      token,
+      amount,
+      triggerPrice: finalTriggerPrice,
+      slippage: params.slippage || 0.15,
+      // Higher default slippage for SL
+      label: params.label || `SL ${lossPercent ? "-" + lossPercent + "%" : "@ $" + finalTriggerPrice}`,
+      ...rest
+    });
+  }
+  /**
+   * Create order with TP and SL as a pair (OCO - One Cancels Other)
+   * 
+   * @param {Object} params
+   * @param {string} params.token - Token mint address
+   * @param {string} params.amount - Amount to sell (same for both orders)
+   * @param {string} params.entryPrice - Entry price for % calculations
+   * @param {number} params.takeProfitPercent - % gain for TP (e.g., 35)
+   * @param {number} params.stopLossPercent - % loss for SL (e.g., 15)
+   * @returns {Object} { tpOrder, slOrder }
+   * 
+   * @example
+   * // Set TP at +35% and SL at -15% from entry
+   * await lo.createBracketOrder({
+   *   token: 'F7Ci...',
+   *   amount: '10000',
+   *   entryPrice: '0.00030',
+   *   takeProfitPercent: 35,
+   *   stopLossPercent: 15
+   * });
+   */
+  async createBracketOrder(params) {
+    const { token, amount, entryPrice, takeProfitPercent, stopLossPercent, ...rest } = params;
+    const tpOrder = await this.createTakeProfit({
+      token,
+      amount,
+      entryPrice,
+      gainPercent: takeProfitPercent,
+      label: `TP +${takeProfitPercent}%`,
+      ...rest
+    });
+    const slOrder = await this.createStopLoss({
+      token,
+      amount,
+      entryPrice,
+      lossPercent: stopLossPercent,
+      label: `SL -${stopLossPercent}%`,
+      ...rest
+    });
+    const orders = this._loadOrders();
+    const tp = orders.find((o) => o.id === tpOrder.id);
+    const sl = orders.find((o) => o.id === slOrder.id);
+    if (tp && sl) {
+      tp.linkedOrderId = slOrder.id;
+      sl.linkedOrderId = tpOrder.id;
+      this._saveOrders(orders);
+    }
+    console.log(`[LimitOrders] Created bracket order: TP +${takeProfitPercent}% / SL -${stopLossPercent}%`);
+    return { tpOrder, slOrder };
+  }
+  /**
+   * Internal: Create order (used by all public methods)
+   * @private
+   */
+  async _createOrder(params) {
     const { type, token, amount, triggerPrice, expiry, slippage = 0.1, label } = params;
     if (!type || !token || !amount || !triggerPrice) {
       throw new Error("LimitOrders: type, token, amount, and triggerPrice are required");
@@ -219,6 +352,16 @@ var LimitOrders = class {
         if (result.success) {
           console.log(`[LimitOrders] \u2705 EXECUTED: ${order.id}`);
           console.log(`  TX: ${result.txHash}`);
+          if (order.linkedOrderId) {
+            const linkedOrder = orders.find((o) => o.id === order.linkedOrderId && o.status === "PENDING");
+            if (linkedOrder) {
+              linkedOrder.status = "CANCELLED";
+              linkedOrder.cancelledAt = Date.now();
+              linkedOrder.cancellationReason = `Linked order ${order.id} executed (OCO)`;
+              console.log(`[LimitOrders] Cancelled linked order ${linkedOrder.id} (OCO)`);
+              this._saveOrders(orders);
+            }
+          }
         } else {
           console.error(`[LimitOrders] \u274C FAILED: ${order.id}`);
           console.error(`  Error: ${result.error}`);

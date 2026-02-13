@@ -1247,3 +1247,6 @@ class NullTrace {
 
 export { NullTrace };
 export default NullTrace;
+
+// Limit Orders Extension
+export { LimitOrders } from './limit-orders.js';
