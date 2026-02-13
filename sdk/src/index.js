@@ -15,6 +15,7 @@ import {
   TransactionMessage,
   ComputeBudgetProgram,
   Keypair,
+  Connection,
 } from '@solana/web3.js';
 import {
   TOKEN_PROGRAM_ID,
@@ -321,7 +322,15 @@ class NullTrace {
 
     this.rpcUrl = rpcUrl;
     this.wallet = NullTrace._resolveWallet(walletOrKey);
+    
+    // For ZK operations (proofs, compressed account queries)
     this.connection = createRpc(rpcUrl, rpcUrl, rpcUrl, { commitment: 'processed' });
+    
+    // For sending transactions with skipPreflight: true (fixes Helius preflight issue)
+    this.sendConnection = new Connection(rpcUrl, {
+      commitment: 'confirmed',
+      confirmTransactionInitialTimeout: 60000
+    });
 
     /** @internal */
     this._adlCache = null;
@@ -1037,10 +1046,15 @@ class NullTrace {
     });
 
     // Send pre-transactions (public → compressed) directly
+    // FIXED: Use sendConnection with skipPreflight to avoid Helius preflight simulation errors
     const preSigs = [];
     for (let i = 0; i < preTransactions.length; i++) {
-      const sig = await this.connection.sendRawTransaction(signed[i].serialize());
-      await this.connection.confirmTransaction(sig);
+      const sig = await this.sendConnection.sendRawTransaction(signed[i].serialize(), {
+        skipPreflight: true,
+        maxRetries: 5,
+        preflightCommitment: 'confirmed'
+      });
+      await this.sendConnection.confirmTransaction(sig, 'confirmed');
       preSigs.push(sig);
     }
 
